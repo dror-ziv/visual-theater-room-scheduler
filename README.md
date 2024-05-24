@@ -3,8 +3,7 @@ Tired of waking up early and still losing the race to book a room?\
 This project ensures you'll never miss out on securing a spot, no matter how competitive it gets.\
 Works for [Visual Theatre](https://students.visualtheatre.co.il/) only.
 
-<img width="300" alt="image" src="https://github.com/dror-ziv/visual-theatre-room-scheduler/assets/84446205/15e06c5b-586f-4327-bc03-d688a5463427">
-
+<img width="300" alt="image" src="https://github.com/dror-ziv/visual-theater-room-scheduler/assets/84446205/ec834cdf-e882-4503-b497-b0f4066591a5">
 # Overview
 
 This project allows you to preconfigure your room booking specifications, handling everything automatically to ensure you're first in line when the booking window opens.\
