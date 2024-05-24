@@ -1,7 +1,9 @@
+import asyncio
 import logging
 import threading
 import time
 from datetime import datetime, timedelta
+from time import sleep
 
 from models import ScheduleRoomCommand, SessionCredentials
 from visual_theater import query_session_creds, book_room
@@ -9,6 +11,7 @@ from visual_theater import query_session_creds, book_room
 _STATUS_IDLE = "idle"  # MUST match js code
 _STATUS_WAITING_FOR_BOOKING_TO_START = "Waiting for booking to start"
 _STATUS_LOGGING_IN = "Logging in"
+_STATUS_LOGGED_IN = "Logged in"
 _STATUS_BOOKING = "Booking"
 _STATUS_SUCCESS = "Success"
 _STATUS_FAILED = "Failed"
@@ -53,19 +56,48 @@ def _retry_book_room_until_success(
     return counter < max_retries
 
 
+import platform
+
+if platform.system() == "Windows":
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+
+
+async def _concurrent_book_room(
+    creds: SessionCredentials,
+    time_: datetime,
+    room_id: str,
+    logger: logging.Logger,
+) -> bool:
+    tasks = []
+    duration = 3
+    time_between = 0.1
+    start_time = datetime.now()
+    while datetime.now() - timedelta(seconds=duration) < start_time:
+        task = asyncio.create_task(book_room(creds, time_, room_id, logger))
+        tasks.append(task)
+        await asyncio.sleep(time_between)
+    logger.info(f"BookRoomConcurrentTasksStarted: {len(tasks)}")
+    results = await asyncio.gather(*tasks)
+    return any(results)
+
+
 def schedule_room_thread(meeting: ScheduleRoomCommand, logger: logging.Logger):
     global status
     status = _STATUS_WAITING_FOR_BOOKING_TO_START
     logger.info(f"Waiting for booking to start at {_SEND_BOOKING_TIME}")
     _sleep_until(
-        _SEND_BOOKING_TIME - timedelta(seconds=3)
+        _SEND_BOOKING_TIME - timedelta(seconds=10)
     )  # head start to win the race
     try:
         status = _STATUS_LOGGING_IN
         session_credentials = query_session_creds(meeting.credentials)
+        status = _STATUS_LOGGED_IN
+        _sleep_until(_SEND_BOOKING_TIME - timedelta(seconds=1))
         status = _STATUS_BOOKING
-        if _retry_book_room_until_success(
-            session_credentials, meeting.time, meeting.room, _MAX_RETRIES, logger
+        if asyncio.run(
+            _concurrent_book_room(
+                session_credentials, meeting.time, meeting.room, logger
+            )
         ):
             status = _STATUS_SUCCESS
         else:

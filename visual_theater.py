@@ -3,6 +3,8 @@ import logging
 from datetime import datetime
 from typing import Optional
 
+import aiohttp
+
 from models import Credentials, SessionCookie, Room, FormToken, SessionCredentials
 
 import requests
@@ -181,7 +183,7 @@ def query_form_token(cookie: SessionCookie) -> FormToken:
     return FormToken(_parse_form_token(_query_form_token(cookie)))
 
 
-def _request_book_meeting(
+async def _request_book_meeting(
     creds: SessionCredentials, time: datetime, room_id: str
 ) -> str:
     """
@@ -202,8 +204,11 @@ def _request_book_meeting(
         "reservation_repeat_until[und][0][value][day]": date_right_now.day,
         "op": "שמירה",  # "save" in hebrew
     }
-    response = requests.post(url, headers=headers, cookies=creds.cookie, data=payload)
-    return response.text
+    async with aiohttp.ClientSession() as session:
+        async with session.post(
+            url, headers=headers, cookies=creds.cookie, data=payload
+        ) as response:
+            return await response.text()
 
 
 def _parse_booking_confirmation_message(html: str, logger: logging.Logger) -> str:
@@ -233,11 +238,11 @@ def _is_booking_successful(message: str) -> bool:
     return False
 
 
-def book_room(
+async def book_room(
     creds: SessionCredentials, time: datetime, room_id: str, logger: logging.Logger
 ) -> bool:
     logger.info(f"RoomBookingAttempted")
-    response = _request_book_meeting(creds, time, room_id)
+    response = await _request_book_meeting(creds, time, room_id)
     message = _parse_booking_confirmation_message(response, logger)
     logger.info(f"RoomBookingResponseMessage: {message}")
     return _is_booking_successful(message)
