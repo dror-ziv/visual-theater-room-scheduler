@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Schedule Room</title>
+</head>
+<body>
+    <h1>Schedule Room</h1>
+    <p> Booking will start at {{start_at}}
+    and will retry for {{max_retry}} times before giving up</p>
+    <form action="/settings" method="post" id="settings_form">
+        <label for="start_booking_at">Start Booking At:</label>
+        <select id="start_booking_at" name="start_booking_at">
+            {% for item in time_slots %}
+            <option value="{{item}}">{{item}}</option>
+            {% endfor %}
+        </select><br>
+        <label for="max_retry">Max retry:</label>
+        <input type="text" id="max_retry" name="max_retry"><br>
+        <button type="submit">Submit</button>
+    </form>
+    <br>
+    <form action="/book_meeting" method="post" id="book_meeting_form">
+        <label for="meeting_time">Meeting Time:</label>
+        <select id="meeting_time" name="meeting_time">
+            {% for item in time_slots %}
+            <option value="{{item}}">{{item}}</option>
+            {% endfor %}
+        </select><br>
+        <label for="meeting_date">Meeting Date:</label>
+        <select id="meeting_date" name="meeting_date">
+            {% for item in date_slots %}
+            <option value="{{item}}">{{item}}</option>
+            {% endfor %}
+        </select><br>
+        <label for="room">Room:</label>
+        <select id="room" name="room">
+            {% for name, id in rooms.items() %}
+            <option value="{{id}}">{{name}}</option>
+            {% endfor %}
+        </select><br>
+        <label for="username">Username:</label>
+        <input type="text" id="username" name="username"><br>
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password"><br>
+        <button type="submit">Book Meeting</button>
+    </form>
+    <div id="status">Status: idle</div>
+    <script>
+        async function fetchStatus() {
+            const response = await fetch('/get_status');
+            const data = await response.json();
+            document.getElementById('status').innerText = `Status: ${data.status}`;
+            const formElement = document.getElementById('book_meeting_form');
+            if (data.status !== 'idle') {
+                formElement.style.display = 'none';
+            } else {
+                formElement.style.display = 'block';
+            }
+            const settingsFormElement = document.getElementById('settings_form');
+            if (data.status !== 'idle') {
+                settingsFormElement.style.display = 'none';
+            } else {
+                settingsFormElement.style.display = 'block';
+            }
+        }
+        setInterval(fetchStatus, 1000);
+    </script>
+</body>
+</html>

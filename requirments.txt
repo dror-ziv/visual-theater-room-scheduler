@@ -1,0 +1,4 @@
+fastapi
+datetime
+requests
+beautifulsoup4
