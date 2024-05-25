@@ -4,6 +4,7 @@ import threading
 import time
 from datetime import datetime, timedelta
 from time import sleep
+from typing import Optional
 
 from models import ScheduleRoomCommand, SessionCredentials
 from visual_theater import query_session_creds, book_room
@@ -79,6 +80,32 @@ async def _concurrent_book_room(
     logger.info(f"BookRoomConcurrentTasksStarted: {len(tasks)}")
     results = await asyncio.gather(*tasks)
     return any(results)
+
+
+def _deduce_alternative_time(available_windows: list[datetime]) -> Optional[datetime]:
+    if len(available_windows) < 6:
+        return None
+    available_windows.sort()
+
+    start_time = available_windows[0]
+    current_window = 1
+    max_window = 6  # 3 hours represented in half-hour slots
+
+    # Iterate over the available windows
+    for i in range(1, len(available_windows)):
+        # Check if the current datetime is exactly 30 minutes after the previous one
+        if available_windows[i] == start_time + timedelta(minutes=30 * current_window):
+            current_window += 1
+        else:
+            start_time = available_windows[i]
+            current_window = 1
+
+        # Check if we found a 3-hour consecutive window
+        if current_window == max_window:
+            return start_time
+
+    # If no 3-hour window was found, return None
+    return None
 
 
 def schedule_room_thread(meeting: ScheduleRoomCommand, logger: logging.Logger):
