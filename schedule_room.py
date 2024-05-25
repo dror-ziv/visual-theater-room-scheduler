@@ -7,7 +7,7 @@ from time import sleep
 from typing import Optional
 
 from models import ScheduleRoomCommand, SessionCredentials
-from visual_theater import query_session_creds, book_room
+from visual_theater import query_session_creds, book_room, query_rooms
 
 _STATUS_IDLE = "idle"  # MUST match js code
 _STATUS_WAITING_FOR_BOOKING_TO_START = "Waiting for booking to start"
@@ -82,7 +82,7 @@ async def _concurrent_book_room(
     return any(results)
 
 
-def _deduce_alternative_time(available_windows: list[datetime]) -> Optional[datetime]:
+def _deduce_alternative_time(available_windows: list[datetime], logger:logging.Logger) -> Optional[datetime]:
     if len(available_windows) < 6:
         return None
     available_windows.sort()
@@ -102,10 +102,41 @@ def _deduce_alternative_time(available_windows: list[datetime]) -> Optional[date
 
         # Check if we found a 3-hour consecutive window
         if current_window == max_window:
+            logger.info(f"AlternativeTimeDeduced: {start_time}")
             return start_time
 
     # If no 3-hour window was found, return None
     return None
+
+def _query_room_available_slots(
+    creds: SessionCredentials,
+    time_: datetime,
+    room_id: str,
+    logger: logging.Logger,
+) -> list[datetime]:
+    for room in query_rooms(creds.cookie, time_, logger):
+        if room.id == room_id:
+            return room.available_slots
+    logger.error(f"RoomNotFoundError: {room_id}")
+    return []
+
+_MAX_ALTERNATIVE_RETRIES = 5
+
+
+def _best_effort_alternative_booking(
+    creds: SessionCredentials,
+    time_: datetime,
+    room_id: str,
+    logger: logging.Logger,
+) -> bool:
+    for counter in range(_MAX_ALTERNATIVE_RETRIES):
+        new_time = _deduce_alternative_time(_query_room_available_slots(creds, time_, room_id, logger), logger)
+        if new_time is None:
+            return False
+        if asyncio.run(book_room(creds, new_time, room_id, logger)):
+            return True
+    logger.info("AlternativeBookingExceededMaxRetries")
+    return False
 
 
 def schedule_room_thread(meeting: ScheduleRoomCommand, logger: logging.Logger):
@@ -127,8 +158,11 @@ def schedule_room_thread(meeting: ScheduleRoomCommand, logger: logging.Logger):
             )
         ):
             status = _STATUS_SUCCESS
-        else:
-            status = _STATUS_FAILED
+            return
+        if _best_effort_alternative_booking(session_credentials, meeting.time, meeting.room, logger):
+            status = _STATUS_SUCCESS
+            return
+        status = _STATUS_FAILED
     except Exception as e:
         print(e)
         status = _STATUS_FAILED
