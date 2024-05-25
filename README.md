@@ -3,22 +3,23 @@ Tired of waking up early and still losing the race to book a room?\
 This project ensures you'll never miss out on securing a spot, no matter how competitive it gets.\
 Works for [Visual Theatre](https://students.visualtheatre.co.il/) only.
 
-<img width="300" alt="image" src="https://github.com/dror-ziv/visual-theater-room-scheduler/assets/84446205/ec834cdf-e882-4503-b497-b0f4066591a5">
+<img width="300" alt="image" src="img.png">
 
 # Overview
-
 This project allows you to preconfigure your room booking specifications, handling everything automatically to ensure you're first in line when the booking window opens.\
-It also includes a retrying mechanism to maximize your chances of securing a spot, even if the first attempt fails.
+It also includes failure handling: If your initial booking attempt fails, the system is able to find the next best slot and book it.
 
-It is basically a simple FastApi front that interact with the backend schedule a task of booking a room at a specific time.\
+It is basically a simple FastApi front that interact with a python backend.\
 The backend is a python script that uses threading to handle the time-sensitive booking operations, including authentication and form token handling.\
-Most of the complexity writing this was API research.
+It sends multiple (10 per second) concurrent requests in an attempt to win the race. if it loses - it queries the other available time slots and book the most fitting one.\
+Most of the complexity in writing this was the API research.
 
 
 ## Features
 * Preconfiguration of Booking Details
 * Automated Booking System
-* Retry Logic
+* Concurrent request to optimize odds
+* Failure handling with alternative time deduction
 * Real-time Status Updates
 
 ## Tech Stack
@@ -35,8 +36,6 @@ python main.py
 ```
 * Go to `http://127.0.0.1:8000`
 
-# Future Enhancements
-* Improved Failure Handling: If your initial booking attempt fails, the system will soon be able to find the next best slot and book it before anyone else even has a chance!
 ## Why This Project?
 I Wrote this project to help a friend who was tired of waking up early and still losing the race.
 Now he can sleep in.
