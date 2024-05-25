@@ -169,7 +169,6 @@ def schedule_room_thread(meeting: ScheduleRoomCommand, logger: logging.Logger):
 
 
 def start_booking_process(meeting: ScheduleRoomCommand, logger: logging.Logger):
-    global status
     thread = threading.Thread(target=schedule_room_thread, args=(meeting, logger))
     thread.start()
 

@@ -157,9 +157,17 @@ def _is_valid_data(rooms: list[Room], queried_date: datetime) -> bool:
     """
     if not rooms:
         return False
+    slot_to_compare = None
+    for room in rooms:
+        if slots := room.available_slots:
+            slot_to_compare = slots[0]
+            break
+
+    if slot_to_compare is None:
+        return False
     return (
-        rooms[0].available_slots[0].month == queried_date.month
-        and rooms[0].available_slots[0].day == queried_date.day
+        slot_to_compare.month == queried_date.month
+        and slot_to_compare.day == queried_date.day
     )
 
 
