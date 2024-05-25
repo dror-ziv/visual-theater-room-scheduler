@@ -6,7 +6,7 @@
 <body>
     <h1>Schedule Room</h1>
     <p> Booking will start at {{start_at}}
-    and will retry for {{max_retry}} times before giving up</p>
+    and will retry for times before giving up</p>
     <form action="/settings" method="post" id="settings_form">
         <label for="start_booking_at">Start Booking At:</label>
         <select id="start_booking_at" name="start_booking_at">
@@ -14,8 +14,6 @@
             <option value="{{item}}">{{item}}</option>
             {% endfor %}
         </select><br>
-        <label for="max_retry">Max retry:</label>
-        <input type="text" id="max_retry" name="max_retry"><br>
         <button type="submit">Submit</button>
     </form>
     <br>

@@ -25,7 +25,6 @@ from schedule_room import (
     start_booking_process,
     real_get_status,
     set_settings,
-    get_max_retries,
     get_send_booking_time,
 )
 from models import ScheduleRoomCommand, Credentials
@@ -72,7 +71,6 @@ def _landing_page(request: Request):
             "time_slots": _time_slots(),
             "date_slots": _date_slots(),
             "rooms": _ROOMS_TO_IDS,
-            "max_retry": get_max_retries(),
             "start_at": get_send_booking_time().strftime("%H:%M"),
         },
     )
@@ -113,11 +111,9 @@ async def get_status(request: Request):
 async def settings_landing(
     request: Request,
     start_booking_at: str = Form(...),
-    max_retry: str = Form(...),
 ):
     set_settings(
         start_booking_at=datetime.strptime(start_booking_at, "%H:%M"),
-        max_retry=int(max_retry),
     )
     return RedirectResponse(url="/", status_code=303)
 

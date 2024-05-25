@@ -3,7 +3,6 @@ import logging
 import threading
 import time
 from datetime import datetime, timedelta
-from time import sleep
 from typing import Optional
 
 from models import ScheduleRoomCommand, SessionCredentials
@@ -40,22 +39,6 @@ _SEND_BOOKING_TIME = datetime(
     year=1, month=1, day=1, hour=8, minute=0, second=0
 )  # only time matters
 
-_MAX_RETRIES = 30
-
-
-def _retry_book_room_until_success(
-    creds: SessionCredentials,
-    time_: datetime,
-    room_id: str,
-    max_retries: int,
-    logger: logging.Logger,
-) -> bool:
-    counter = 0
-    while not book_room(creds, time_, room_id, logger) and counter < max_retries:
-        counter += 1
-    # if we succeeded, counter will be less than max_retries
-    return counter < max_retries
-
 
 import platform
 
@@ -82,7 +65,9 @@ async def _concurrent_book_room(
     return any(results)
 
 
-def _deduce_alternative_time(available_windows: list[datetime], logger:logging.Logger) -> Optional[datetime]:
+def _deduce_alternative_time(
+    available_windows: list[datetime], logger: logging.Logger
+) -> Optional[datetime]:
     if len(available_windows) < 6:
         return None
     available_windows.sort()
@@ -108,6 +93,7 @@ def _deduce_alternative_time(available_windows: list[datetime], logger:logging.L
     # If no 3-hour window was found, return None
     return None
 
+
 def _query_room_available_slots(
     creds: SessionCredentials,
     time_: datetime,
@@ -120,6 +106,7 @@ def _query_room_available_slots(
     logger.error(f"RoomNotFoundError: {room_id}")
     return []
 
+
 _MAX_ALTERNATIVE_RETRIES = 5
 
 
@@ -130,7 +117,9 @@ def _best_effort_alternative_booking(
     logger: logging.Logger,
 ) -> bool:
     for counter in range(_MAX_ALTERNATIVE_RETRIES):
-        new_time = _deduce_alternative_time(_query_room_available_slots(creds, time_, room_id, logger), logger)
+        new_time = _deduce_alternative_time(
+            _query_room_available_slots(creds, time_, room_id, logger), logger
+        )
         if new_time is None:
             return False
         if asyncio.run(book_room(creds, new_time, room_id, logger)):
@@ -159,9 +148,6 @@ def schedule_room_thread(meeting: ScheduleRoomCommand, logger: logging.Logger):
         ):
             status = _STATUS_SUCCESS
             return
-        if _best_effort_alternative_booking(session_credentials, meeting.time, meeting.room, logger):
-            status = _STATUS_SUCCESS
-            return
         status = _STATUS_FAILED
     except Exception as e:
         print(e)
@@ -177,14 +163,9 @@ def real_get_status():
     return status
 
 
-def set_settings(start_booking_at: datetime, max_retry: int):
-    global _SEND_BOOKING_TIME, _MAX_RETRIES
+def set_settings(start_booking_at: datetime):
+    global _SEND_BOOKING_TIME
     _SEND_BOOKING_TIME = start_booking_at
-    _MAX_RETRIES = max_retry
-
-
-def get_max_retries():
-    return _MAX_RETRIES
 
 
 def get_send_booking_time():
