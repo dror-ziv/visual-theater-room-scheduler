@@ -111,9 +111,11 @@ async def get_status(request: Request):
 async def settings_landing(
     request: Request,
     start_booking_at: str = Form(...),
+    alternative_booking_enabled: bool = Form(False),
 ):
     set_settings(
         start_booking_at=datetime.strptime(start_booking_at, "%H:%M"),
+        alternative_booking=alternative_booking_enabled,
     )
     return RedirectResponse(url="/", status_code=303)
 

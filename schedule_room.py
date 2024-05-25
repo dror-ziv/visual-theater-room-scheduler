@@ -38,7 +38,7 @@ def _sleep_until(awake_time: datetime):
 _SEND_BOOKING_TIME = datetime(
     year=1, month=1, day=1, hour=8, minute=0, second=0
 )  # only time matters
-
+_ALTERNATIVE_BOOKING_ENABLED = True
 
 import platform
 
@@ -148,6 +148,12 @@ def schedule_room_thread(meeting: ScheduleRoomCommand, logger: logging.Logger):
         ):
             status = _STATUS_SUCCESS
             return
+        if _ALTERNATIVE_BOOKING_ENABLED:
+            if _best_effort_alternative_booking(
+                session_credentials, meeting.time, meeting.room, logger
+            ):
+                status = _STATUS_SUCCESS
+                return
         status = _STATUS_FAILED
     except Exception as e:
         print(e)
@@ -163,10 +169,14 @@ def real_get_status():
     return status
 
 
-def set_settings(start_booking_at: datetime):
-    global _SEND_BOOKING_TIME
+def set_settings(start_booking_at: datetime, alternative_booking: bool):
+    global _SEND_BOOKING_TIME, _ALTERNATIVE_BOOKING_ENABLED
     _SEND_BOOKING_TIME = start_booking_at
+    _ALTERNATIVE_BOOKING_ENABLED = alternative_booking
 
 
 def get_send_booking_time():
     return _SEND_BOOKING_TIME
+
+def get_alternative_bookings():
+    return _ALTERNATIVE_BOOKING_ENABLED
