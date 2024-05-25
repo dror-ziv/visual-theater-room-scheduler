@@ -15,6 +15,7 @@ _STATUS_LOGGED_IN = "Logged in"
 _STATUS_BOOKING = "Booking"
 _STATUS_SUCCESS = "Success"
 _STATUS_FAILED = "Failed"
+_STATUS_ALTERNATIVE_BOOKING = "Alternative booking"
 status = _STATUS_IDLE  # this is a global mutable variable that will be used to store the status of the booking process
 
 
@@ -149,6 +150,7 @@ def schedule_room_thread(meeting: ScheduleRoomCommand, logger: logging.Logger):
             status = _STATUS_SUCCESS
             return
         if _ALTERNATIVE_BOOKING_ENABLED:
+            status = _STATUS_ALTERNATIVE_BOOKING
             if _best_effort_alternative_booking(
                 session_credentials, meeting.time, meeting.room, logger
             ):
@@ -156,7 +158,7 @@ def schedule_room_thread(meeting: ScheduleRoomCommand, logger: logging.Logger):
                 return
         status = _STATUS_FAILED
     except Exception as e:
-        print(e)
+        logger.error(f"ScheduleRoomTaskFailed: {e}")
         status = _STATUS_FAILED
 
 
