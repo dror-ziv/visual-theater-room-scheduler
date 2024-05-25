@@ -25,7 +25,7 @@ from schedule_room import (
     start_booking_process,
     real_get_status,
     set_settings,
-    get_send_booking_time,
+    get_send_booking_time, get_alternative_bookings,
 )
 from models import ScheduleRoomCommand, Credentials
 
@@ -72,6 +72,7 @@ def _landing_page(request: Request):
             "date_slots": _date_slots(),
             "rooms": _ROOMS_TO_IDS,
             "start_at": get_send_booking_time().strftime("%H:%M"),
+            "alternative_booking_enabled": get_alternative_bookings()
         },
     )
 

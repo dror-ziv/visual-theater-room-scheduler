@@ -5,8 +5,10 @@
 </head>
 <body>
     <h1>Schedule Room</h1>
-    <p> Booking will start at {{start_at}}
-    and will retry for times before giving up</p>
+    <p> Booking will start at {{start_at}}. It will attempt to send 10 requests per second for 3 seconds.
+     {% if alternative_booking_enabled %}
+     <br>If fails, it will find the earliest 3 hour windows in the day and book it.
+    {% endif %}</p>
     <form action="/settings" method="post" id="settings_form">
         <label for="start_booking_at">Start Booking At:</label>
         <select id="start_booking_at" name="start_booking_at">
