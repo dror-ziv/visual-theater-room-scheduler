@@ -3,7 +3,7 @@ Tired of waking up early and still losing the race to book a room?\
 This project ensures you'll never miss out on securing a spot, no matter how competitive it gets.\
 Works for [Visual Theatre](https://students.visualtheatre.co.il/) only.
 
-<img width="300" alt="image" src="img.png">
+<img width="500" alt="image" src="img.png">
 
 # Overview
 This project allows you to preconfigure your room booking specifications, handling everything automatically to ensure you're first in line when the booking window opens.\
